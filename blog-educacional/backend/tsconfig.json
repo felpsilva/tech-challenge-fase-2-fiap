@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "ignoreDeprecations": "6.0",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "rootDir": "./",
+    // "outDir": "./dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
