@@ -8,8 +8,8 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
         title: z.string(),
         slug: z.string(),
         content: z.string(),
-        image_url: z.string(),
-        status: z.string(),
+        image_url: z.string().optional(),
+        status: z.string().default('draft'),
         categories: z.array(
             z.object({
                 id: z.coerce.number().optional(),
@@ -32,8 +32,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
         status,
         categories
     })
-    return "criado: " + JSON.stringify(post)
-    // return reply.status(201).send(post)
+        return reply.status(201).send(post)
 
     } catch (error) {
         console.error('Error creating post:', error)
