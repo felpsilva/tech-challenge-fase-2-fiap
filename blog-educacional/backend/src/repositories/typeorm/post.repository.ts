@@ -1,18 +1,36 @@
 import { Post } from '@/entities/post.entity';
+import { Category } from '@/entities/category.entity';
 import { IPostRepository } from '../post.repository.interface';
-import { ILike, Repository } from 'typeorm';
+import { ILike, In, Repository } from 'typeorm';
 import { appDataSource } from '@/lib/typeorm/typeorm';
 import { IPost } from '@/entities/models/post.interface';
 
 export class PostRepository implements IPostRepository {
     private repository: Repository<Post>
+    private categoryRepository: Repository<Category>
 
     constructor() {
         this.repository = appDataSource.getRepository(Post)
+        this.categoryRepository = appDataSource.getRepository(Category)
     }
 
     async create(post: IPost): Promise<IPost> {
-        return await this.repository.save(post)
+        const newPost = this.repository.create(post)
+
+        // O TypeORM só grava na tabela de junção (post_categories) quando as
+        // categorias da relação ManyToMany são entidades existentes (com id).
+        // Por isso resolvemos as categorias informadas pelos seus ids antes de salvar.
+        const categoryIds = (post.categories ?? [])
+            .map((category) => category.id)
+            .filter((id): id is number => id !== undefined && id !== null)
+
+        if (categoryIds.length > 0) {
+            newPost.categories = await this.categoryRepository.findBy({
+                id: In(categoryIds),
+            })
+        }
+
+        return await this.repository.save(newPost)
     }
 
     async findAll(): Promise<IPost[]> {

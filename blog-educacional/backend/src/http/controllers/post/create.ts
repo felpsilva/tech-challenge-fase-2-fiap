@@ -1,3 +1,4 @@
+import { ICategory } from '@/entities/models/category.interface';
 import { makeCreatePostUseCase } from '@/use-cases/factory/make-create-post-use-case';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import z from 'zod';
@@ -12,9 +13,9 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
         status: z.string().default('draft'),
         categories: z.array(
             z.object({
-                id: z.coerce.number().optional(),
-                name: z.string(),
-                slug: z.string(),
+                id: z.coerce.number(),
+                name: z.string().optional(),
+                slug: z.string().optional(),
             })
         ).optional()
     })
@@ -30,7 +31,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
         content,
         image_url,
         status,
-        categories
+        categories: categories as ICategory[] | undefined,
     })
         return reply.status(201).send(post)
 
