@@ -50,7 +50,7 @@ export class Post implements IPost {
         length: 255,
         nullable: true,
     })
-    image_url?: string
+    image_url?: string | undefined
 
     @Column({
         name: 'status',
@@ -64,16 +64,16 @@ export class Post implements IPost {
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
     })
-    created_at: Date;
+    created_at?: Date;
 
     @Column({
         name: 'updated_at',
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
     })
-    updated_at: Date;
+    updated_at?: Date;
 
-    @ManyToMany(() => Category)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable({
         name: 'post_categories',
         joinColumn: {
