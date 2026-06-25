@@ -16,10 +16,6 @@ export class PostRepository implements IPostRepository {
 
     async create(post: IPost): Promise<IPost> {
         const newPost = this.repository.create(post)
-
-        // O TypeORM só grava na tabela de junção (post_categories) quando as
-        // categorias da relação ManyToMany são entidades existentes (com id).
-        // Por isso resolvemos as categorias informadas pelos seus ids antes de salvar.
         const categoryIds = (post.categories ?? [])
             .map((category) => category.id)
             .filter((id): id is number => id !== undefined && id !== null)
