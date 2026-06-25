@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Blog Educacional</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="brand"><span class="logo">B</span> Blog Educacional</a>
+      <nav class="nav">
+        <a href="index.html">Início</a>
+        <a href="categories.html">Categorias</a>
+        <a href="admin.html" class="active">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" x-data="adminApp()" x-init="init()" x-cloak>
+    <div class="page-head">
+      <h1>Painel administrativo</h1>
+      <p>Gerencie publicações, usuários e categorias do blog.</p>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.msg" x-transition class="alert" :class="toast.type" x-text="toast.msg"></div>
+
+    <div class="admin-layout">
+      <!-- Navegação lateral -->
+      <aside class="admin-nav">
+        <button :class="{ active: tab === 'posts' }" @click="tab = 'posts'">📝 Publicações</button>
+        <button :class="{ active: tab === 'users' }" @click="tab = 'users'">👤 Usuários</button>
+        <button :class="{ active: tab === 'categories' }" @click="tab = 'categories'">🏷️ Categorias</button>
+      </aside>
+
+      <section>
+        <!-- ============ POSTS ============ -->
+        <div class="panel" x-show="tab === 'posts'">
+          <div class="panel-head">
+            <h2>Publicações</h2>
+            <button class="btn" @click="newPost()">+ Nova publicação</button>
+          </div>
+
+          <div class="state" x-show="loading.posts"><div class="spinner"></div>Carregando…</div>
+          <div class="alert error" x-show="error.posts" x-text="error.posts"></div>
+          <div class="state" x-show="!loading.posts && !error.posts && posts.length === 0">
+            <div class="icon">📭</div><p>Nenhuma publicação cadastrada.</p>
+          </div>
+
+          <div class="table-wrap" x-show="!loading.posts && posts.length > 0">
+            <table>
+              <thead>
+                <tr><th>Título</th><th>Autor</th><th>Categorias</th><th>Status</th><th>Data</th><th></th></tr>
+              </thead>
+              <tbody>
+                <template x-for="post in posts" :key="post.id">
+                  <tr>
+                    <td><a :href="'post.html?id=' + post.id" x-text="post.title"></a></td>
+                    <td x-text="post.user?.username || userName(post.user_id)"></td>
+                    <td>
+                      <div class="tags">
+                        <template x-for="cat in (post.categories || [])" :key="cat.id">
+                          <span class="tag" x-text="cat.name"></span>
+                        </template>
+                        <span class="muted" x-show="!post.categories || post.categories.length === 0">—</span>
+                      </div>
+                    </td>
+                    <td><span class="badge" :class="post.status" x-text="post.status === 'published' ? 'Publicado' : 'Rascunho'"></span></td>
+                    <td x-text="utils.formatDate(post.created_at)"></td>
+                    <td class="actions">
+                      <button class="btn secondary sm" @click="editPost(post)">Editar</button>
+                      <button class="btn danger sm" @click="removePost(post)">Excluir</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ============ USERS ============ -->
+        <div class="panel" x-show="tab === 'users'">
+          <div class="panel-head">
+            <h2>Usuários</h2>
+            <button class="btn" @click="newUser()">+ Novo usuário</button>
+          </div>
+
+          <div class="state" x-show="loading.users"><div class="spinner"></div>Carregando…</div>
+          <div class="alert error" x-show="error.users" x-text="error.users"></div>
+          <div class="state" x-show="!loading.users && !error.users && users.length === 0">
+            <div class="icon">👥</div><p>Nenhum usuário cadastrado.</p>
+          </div>
+
+          <div class="table-wrap" x-show="!loading.users && users.length > 0">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Usuário</th><th>Permissão</th><th>Criado em</th><th></th></tr>
+              </thead>
+              <tbody>
+                <template x-for="user in users" :key="user.id">
+                  <tr>
+                    <td x-text="user.id"></td>
+                    <td x-text="user.username"></td>
+                    <td><span class="badge" :class="user.permission" x-text="user.permission"></span></td>
+                    <td x-text="utils.formatDate(user.created_at)"></td>
+                    <td class="actions">
+                      <button class="btn secondary sm" @click="editUser(user)">Editar</button>
+                      <button class="btn danger sm" @click="removeUser(user)">Excluir</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ============ CATEGORIES ============ -->
+        <div class="panel" x-show="tab === 'categories'">
+          <div class="panel-head">
+            <h2>Categorias</h2>
+            <button class="btn" @click="newCategory()">+ Nova categoria</button>
+          </div>
+
+          <div class="state" x-show="loading.categories"><div class="spinner"></div>Carregando…</div>
+          <div class="alert error" x-show="error.categories" x-text="error.categories"></div>
+          <div class="state" x-show="!loading.categories && !error.categories && categories.length === 0">
+            <div class="icon">🏷️</div><p>Nenhuma categoria cadastrada.</p>
+          </div>
+
+          <div class="table-wrap" x-show="!loading.categories && categories.length > 0">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nome</th><th>Slug</th><th></th></tr>
+              </thead>
+              <tbody>
+                <template x-for="cat in categories" :key="cat.id">
+                  <tr>
+                    <td x-text="cat.id"></td>
+                    <td x-text="cat.name"></td>
+                    <td><code x-text="cat.slug"></code></td>
+                    <td class="actions">
+                      <button class="btn secondary sm" @click="editCategory(cat)">Editar</button>
+                      <button class="btn danger sm" @click="removeCategory(cat)">Excluir</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ MODAL: POST ============ -->
+    <div class="modal-overlay" x-show="modal === 'post'" @keydown.escape.window="closeModal()" style="display:none">
+      <div class="modal" @click.outside="closeModal()">
+        <h3 x-text="editing ? 'Editar publicação' : 'Nova publicação'"></h3>
+        <div class="alert error" x-show="formError" x-text="formError"></div>
+
+        <form @submit.prevent="savePost()">
+          <div class="form-group" x-show="!editing">
+            <label>Autor</label>
+            <select x-model="form.user_id">
+              <template x-for="u in users" :key="u.id">
+                <option :value="u.id" x-text="u.username"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Título</label>
+            <input type="text" x-model="form.title" @input="autoSlug()" placeholder="Título da publicação" />
+          </div>
+
+          <div class="form-group">
+            <label>Slug</label>
+            <input type="text" x-model="form.slug" @input="_slugTouched = true" placeholder="slug-da-publicacao" />
+            <div class="hint">Identificador usado na URL. Gerado automaticamente a partir do título.</div>
+          </div>
+
+          <div class="form-group">
+            <label>Imagem (URL)</label>
+            <input type="url" x-model="form.image_url" placeholder="https://exemplo.com/imagem.jpg" />
+          </div>
+
+          <div class="form-group">
+            <label>Conteúdo</label>
+            <textarea x-model="form.content" placeholder="Escreva o conteúdo da publicação…"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="form-group">
+              <label>Status</label>
+              <select x-model="form.status">
+                <option value="draft">Rascunho</option>
+                <option value="published">Publicado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Categorias</label>
+            <div class="checkbox-grid" x-show="categories.length > 0">
+              <template x-for="cat in categories" :key="cat.id">
+                <label
+                  class="checkbox-pill"
+                  :class="{ checked: selectedCategoryIds.includes(cat.id) }"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="selectedCategoryIds.includes(cat.id)"
+                    :disabled="editing"
+                    @change="toggleCategory(cat.id)"
+                  />
+                  <span x-text="cat.name"></span>
+                </label>
+              </template>
+            </div>
+            <div class="hint" x-show="categories.length === 0">Nenhuma categoria cadastrada.</div>
+            <div class="hint" x-show="editing">As categorias são definidas na criação e não podem ser alteradas na edição.</div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn secondary" @click="closeModal()">Cancelar</button>
+            <button type="submit" class="btn" :disabled="saving" x-text="saving ? 'Salvando…' : 'Salvar'"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ MODAL: USER ============ -->
+    <div class="modal-overlay" x-show="modal === 'user'" @keydown.escape.window="closeModal()" style="display:none">
+      <div class="modal" @click.outside="closeModal()">
+        <h3 x-text="editing ? 'Editar usuário' : 'Novo usuário'"></h3>
+        <div class="alert error" x-show="formError" x-text="formError"></div>
+
+        <form @submit.prevent="saveUser()">
+          <div class="form-group">
+            <label>Nome de usuário</label>
+            <input type="text" x-model="form.username" placeholder="ex.: prof.maria" />
+          </div>
+
+          <div class="form-group">
+            <label x-text="editing ? 'Nova senha (deixe em branco para manter)' : 'Senha'"></label>
+            <input type="password" x-model="form.password" placeholder="••••••••" />
+          </div>
+
+          <div class="form-group">
+            <label>Permissão</label>
+            <select x-model="form.permission">
+              <option value="editor">Editor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn secondary" @click="closeModal()">Cancelar</button>
+            <button type="submit" class="btn" :disabled="saving" x-text="saving ? 'Salvando…' : 'Salvar'"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ MODAL: CATEGORY ============ -->
+    <div class="modal-overlay" x-show="modal === 'category'" @keydown.escape.window="closeModal()" style="display:none">
+      <div class="modal" @click.outside="closeModal()">
+        <h3 x-text="editing ? 'Editar categoria' : 'Nova categoria'"></h3>
+        <div class="alert error" x-show="formError" x-text="formError"></div>
+
+        <form @submit.prevent="saveCategory()">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" x-model="form.name" @input="autoSlugCategory()" placeholder="ex.: Matemática" />
+          </div>
+          <div class="form-group">
+            <label>Slug</label>
+            <input type="text" x-model="form.slug" @input="_slugTouched = true" placeholder="matematica" />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn secondary" @click="closeModal()">Cancelar</button>
+            <button type="submit" class="btn" :disabled="saving" x-text="saving ? 'Salvando…' : 'Salvar'"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Blog Educacional · Tech Challenge FIAP · Fase 2
+  </footer>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/admin.js"></script>
+  <script defer src="assets/vendor/alpine.min.js"></script>
+</body>
+</html>
