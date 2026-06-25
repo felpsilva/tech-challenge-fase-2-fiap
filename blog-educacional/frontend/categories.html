@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categorias · Blog Educacional</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="brand"><span class="logo">B</span> Blog Educacional</a>
+      <nav class="nav">
+        <a href="index.html">Início</a>
+        <a href="categories.html" class="active">Categorias</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" x-data="categoriesPage()" x-init="load()" x-cloak>
+    <div class="page-head">
+      <h1>Categorias</h1>
+      <p>Explore as publicações organizadas por tema.</p>
+    </div>
+
+    <div class="state" x-show="loading">
+      <div class="spinner"></div>
+      Carregando…
+    </div>
+
+    <div class="alert error" x-show="error" x-text="error"></div>
+
+    <template x-if="!loading && !error">
+      <div>
+        <!-- Filtros por categoria -->
+        <div class="tags" style="margin-bottom:26px; gap:10px">
+          <span
+            class="checkbox-pill"
+            :class="{ checked: selected === null }"
+            @click="selected = null"
+          >Todas <strong x-text="'(' + posts.length + ')'" style="margin-left:4px"></strong></span>
+          <template x-for="cat in categories" :key="cat.id">
+            <span
+              class="checkbox-pill"
+              :class="{ checked: selected === cat.id }"
+              @click="selected = cat.id"
+            >
+              <span x-text="cat.name"></span>
+              <strong x-text="'(' + countFor(cat.id) + ')'" style="margin-left:4px"></strong>
+            </span>
+          </template>
+        </div>
+
+        <div class="state" x-show="categories.length === 0">
+          <div class="icon">🏷️</div>
+          <p>Nenhuma categoria cadastrada ainda.</p>
+        </div>
+
+        <div class="state" x-show="filteredPosts().length === 0 && categories.length > 0">
+          <div class="icon">📭</div>
+          <p>Nenhuma publicação nesta categoria.</p>
+        </div>
+
+        <div class="post-grid">
+          <template x-for="post in filteredPosts()" :key="post.id">
+            <article class="card">
+              <template x-if="post.image_url">
+                <img class="thumb" :src="post.image_url" :alt="post.title" loading="lazy" />
+              </template>
+              <template x-if="!post.image_url">
+                <div class="thumb placeholder">📝</div>
+              </template>
+              <div class="body">
+                <div class="tags" x-show="post.categories && post.categories.length">
+                  <template x-for="cat in (post.categories || [])" :key="cat.id">
+                    <span class="tag" x-text="cat.name"></span>
+                  </template>
+                </div>
+                <h3><a :href="'post.html?id=' + post.id" x-text="post.title"></a></h3>
+                <p class="excerpt" x-text="utils.excerpt(post.content)"></p>
+                <div class="meta">
+                  <span x-show="post.user" x-text="'✍️ ' + (post.user?.username || '')"></span>
+                  <span x-text="'🗓️ ' + utils.formatDate(post.created_at)"></span>
+                </div>
+              </div>
+            </article>
+          </template>
+        </div>
+      </div>
+    </template>
+  </main>
+
+  <footer class="site-footer">
+    Blog Educacional · Tech Challenge FIAP · Fase 2
+  </footer>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    function categoriesPage() {
+      return {
+        categories: [],
+        posts: [],
+        selected: null,
+        loading: true,
+        error: '',
+        async load() {
+          try {
+            const [categories, posts] = await Promise.all([
+              api.listCategories(),
+              api.listPosts(),
+            ]);
+            this.categories = categories;
+            this.posts = posts;
+            // Pré-seleção via ?cat=ID
+            const param = utils.queryParam('cat');
+            if (param) this.selected = Number(param);
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+        countFor(catId) {
+          return this.posts.filter(p => (p.categories || []).some(c => c.id === catId)).length;
+        },
+        filteredPosts() {
+          if (this.selected === null) return this.posts;
+          return this.posts.filter(p => (p.categories || []).some(c => c.id === this.selected));
+        },
+      };
+    }
+  </script>
+  <script defer src="assets/vendor/alpine.min.js"></script>
+</body>
+</html>
