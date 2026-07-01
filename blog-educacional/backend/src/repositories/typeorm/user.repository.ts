@@ -25,6 +25,10 @@ export class UserRepository implements IUserRepository {
         return await this.repository.findOne({ where: { id } })
     }
 
+    async findByUsername(username: string): Promise<IUser | null> {
+        return await this.repository.findOne({ where: { username } })
+    }
+
     async update(id: number, user: Partial<IUser>): Promise<IUser | null> {
         const existingUser = await this.repository.findOne({ where: { id } })
 

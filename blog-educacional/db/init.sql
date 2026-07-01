@@ -36,32 +36,3 @@ CREATE TABLE IF NOT EXISTS post_categories (
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     PRIMARY KEY (post_id, category_id)
 );
-
--- ---------------------------------------------------------------------------
--- Dados de demonstração (seed)
--- Usuário: admin  |  senha: admin123
--- ---------------------------------------------------------------------------
-INSERT INTO users (username, password, permission)
-VALUES ('admin', '$2b$08$XEcmG48tmCloviGyjJKyuuTxjpefeJVBYr1K5kiyCBUrGl2Y7LYtC', 'admin')
-ON CONFLICT (username) DO NOTHING;
-
-INSERT INTO categories (name, slug) VALUES
-    ('Matemática', 'matematica'),
-    ('Ciências', 'ciencias'),
-    ('História', 'historia')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO posts (user_id, title, slug, content, image_url, status)
-VALUES (
-    1,
-    'Bem-vindo ao Blog Educacional',
-    'bem-vindo-ao-blog-educacional',
-    E'Este é um post de exemplo criado automaticamente na inicialização do banco.\n\nUse o painel administrativo para criar novas publicações, gerenciar usuários e categorias.',
-    NULL,
-    'published'
-)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO post_categories (post_id, category_id)
-VALUES (1, 1), (1, 2)
-ON CONFLICT DO NOTHING;
