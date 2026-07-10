@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/server.ts",
     "start:dev": "tsx watch src/server.ts",
+    "test": "jest --runInBand",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -15,12 +16,15 @@
   "type": "commonjs",
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/jest": "30.0.0",
     "@types/node": "25.9.3",
     "@typescript-eslint/eslint-plugin": "8.61.0",
     "@typescript-eslint/parser": "8.61.0",
     "eslint": "10.4.1",
     "globals": "17.6.0",
+    "jest": "30.4.2",
     "jiti": "2.7.0",
+    "ts-jest": "29.4.11",
     "tsup": "8.5.1",
     "tsx": "4.22.4",
     "typescript": "6.0.3",

@@ -1,0 +1,11 @@
+{
+    "name": "tech-challenge-fase-2-fiap",
+    "private": true,
+    "scripts": {
+        "start": "npm --prefix blog-educacional/backend start",
+        "start:dev": "npm --prefix blog-educacional/backend run start:dev",
+        "test": "npm --prefix blog-educacional/backend test",
+        "lint": "npm --prefix blog-educacional/backend run lint",
+        "lint:fix": "npm --prefix blog-educacional/backend run lint:fix"
+    }
+}
