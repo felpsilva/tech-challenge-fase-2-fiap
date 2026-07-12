@@ -36,3 +36,10 @@ CREATE TABLE IF NOT EXISTS post_categories (
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     PRIMARY KEY (post_id, category_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- Dados de demonstração (seed)
+-- ---------------------------------------------------------------------------
+INSERT INTO users (username, password, permission)
+VALUES ('admin', '$2b$08$XEcmG48tmCloviGyjJKyuuTxjpefeJVBYr1K5kiyCBUrGl2Y7LYtC', 'admin')
+ON CONFLICT (username) DO NOTHING;
