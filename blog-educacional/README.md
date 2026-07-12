@@ -1,31 +1,29 @@
 # Blog Educacional — Tech Challenge FIAP (Fase 2)
 
-Aplicação de blog educacional composta por **API (Fastify + TypeORM)** e
-**PostgreSQL**, toda orquestrada com Docker Compose.
+Aplicação de blog educacional composta por **API (Fastify + TypeORM)** com
+**PostgreSQL no Neon (remoto)**, orquestrada com Docker Compose.
 
 ## Arquitetura — separação de containers
 
 O projeto usa **2 containers**, cada um com uma responsabilidade única:
 
-| Container  | Imagem            | Papel                                                | Porta (host) |
-| ---------- | ----------------- | ---------------------------------------------------- | ------------ |
-| `db`       | `postgres:16`     | Persistência dos dados (banco relacional)            | 5432         |
-| `backend`  | build `./backend` | API REST — regras de negócio, acesso ao banco        | 3001         |
+| Container   | Imagem              | Papel                                                         | Porta (host) |
+| ----------- | ------------------- | ------------------------------------------------------------- | ------------ |
+| `neon-init` | `postgres:16-alpine`| Bootstrap idempotente do schema/seed no Neon via `db/init.sql` | -            |
+| `backend`   | build `./backend`   | API REST — regras de negócio e acesso ao Neon                 | 3001         |
 
 ### Por que essa separação faz sentido neste contexto?
 
-- **Responsabilidade única / escalabilidade independente.** Banco e API
-  evoluem e escalam separadamente sem tocar no banco.
-- **Banco isolado com volume próprio (`pgdata`).** Os dados sobrevivem a
-  rebuilds/recriações dos containers de aplicação. O ciclo de vida do dado é
-  separado do ciclo de vida do código.
+- **Banco gerenciado no Neon.** Não há container local de banco para manter.
+- **Bootstrap automático.** O container `neon-init` aplica `db/init.sql` antes
+  do backend subir, evitando erro de tabela inexistente em ambiente novo.
 ```
-┌────────────┐      ┌────────────┐
-│     db     │      │  backend   │
-│ PostgreSQL │◀─────│  Fastify   │
-│  :5432     │      │  :3001     │
-└────────────┘      └────────────┘
-       ▲ volume pgdata   ▲ REST
+┌────────────┐       ┌────────────┐
+│ neon-init  │──────▶│  backend   │
+│ aplica SQL │       │  Fastify   │
+└────────────┘       │  :3001     │
+         ▲           └────────────┘
+         └──────▶ Neon PostgreSQL remoto
 ```
 
 ## Como subir a aplicação
@@ -39,27 +37,27 @@ docker compose up --build
 Acesse:
 
 - **API:** http://localhost:3001
-- **Banco:** localhost:5432 (usuário/senha/banco: `blog`)
 
 Para rodar em segundo plano: `docker compose up --build -d`
-Para derrubar: `docker compose down` (use `-v` para apagar também o banco).
+Para derrubar: `docker compose down`.
 
 ## Dados de demonstração (seed)
 
-Na **primeira** subida, o `db/init.sql` cria o schema e popula dados de
-exemplo (só roda com o volume vazio):
+Na subida, o `db/init.sql` cria o schema e popula dados de exemplo no Neon.
+Como o script é idempotente (`IF NOT EXISTS` e `ON CONFLICT`), ele pode rodar
+em toda inicialização sem duplicar estrutura/dados sensíveis:
 
 - Usuário: **admin** · senha: **admin123** (permissão `admin`)
 - Categorias: Matemática, Ciências, História
 - Uma publicação de boas-vindas
 
-Para recriar o seed do zero: `docker compose down -v && docker compose up --build`.
+Para reaplicar o bootstrap: `docker compose up --build`.
 
 ## Estrutura
 
 ```
 .
-├── docker-compose.yml      # orquestra db + backend
+├── docker-compose.yml      # orquestra neon-init + backend
 ├── db/
 │   └── init.sql            # schema + seed (TypeORM não usa synchronize)
 └── backend/                # API Fastify + TypeORM (Dockerfile próprio)
@@ -69,4 +67,4 @@ Para recriar o seed do zero: `docker compose down -v && docker compose up --buil
 
 - O backend roda o TypeScript diretamente via `tsx` (sem etapa de build).
 - O TypeORM **não** usa `synchronize`; por isso o schema é criado pelo
-  `db/init.sql` na inicialização do Postgres.
+  `db/init.sql` na etapa `neon-init`.

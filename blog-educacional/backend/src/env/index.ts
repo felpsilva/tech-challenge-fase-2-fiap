@@ -5,6 +5,7 @@ import { z } from 'zod';
 const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'teste']).default('development'),
     PORT: z.coerce.number().default(3001),
+    DATABASE_URL: z.string().url().optional(),
     DB_HOST: z.string(),
     DB_USERNAME: z.string(),
     DB_PASSWORD: z.string(),
@@ -15,9 +16,9 @@ const envSchema = z.object({
 
 const _env = envSchema.safeParse(process.env)
 
-if(!_env.success) {
+if (!_env.success) {
     console.error('Variáveis de ambientes inválidas', _env.error.format());
-    throw new Error('Variáveis de ambientes inválidas');   
+    throw new Error('Variáveis de ambientes inválidas');
 }
 
 export const env = _env.data;

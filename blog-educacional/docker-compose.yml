@@ -1,42 +1,26 @@
 services:
-  db:
+  neon-init:
     image: postgres:16-alpine
-    container_name: blog-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: blog
-      POSTGRES_PASSWORD: blog
-      POSTGRES_DB: blog
-    ports:
-      - "5432:5432"
+    container_name: blog-neon-init
+    restart: "no"
+    env_file:
+      - ./backend/.env
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      # Schema + seed: rodam apenas na primeira subida (volume vazio).
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blog -d blog"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - ./db/init.sql:/init.sql:ro
+    command: >
+      sh -c "psql \"$$DATABASE_URL\" -v ON_ERROR_STOP=1 -f /init.sql"
 
   backend:
     build: ./backend
     container_name: blog-backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: development
       PORT: 3001
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USERNAME: blog
-      DB_PASSWORD: blog
-      DB_NAME: blog
-      JWT_SECRET: itachi
     ports:
       - "3001:3001"
     depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  pgdata:
+      neon-init:
+        condition: service_completed_successfully
