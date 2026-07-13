@@ -1,7 +1,5 @@
 -- Schema inicial do Blog Educacional.
 -- Executado automaticamente pelo Postgres na primeira subida do container
--- (arquivos em /docker-entrypoint-initdb.d só rodam quando o volume está vazio).
--- O backend (TypeORM) não usa `synchronize`, por isso as tabelas são criadas aqui.
 
 CREATE TABLE IF NOT EXISTS users (
     id          SERIAL PRIMARY KEY,
