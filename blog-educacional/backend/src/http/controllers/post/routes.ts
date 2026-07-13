@@ -10,7 +10,7 @@ import { authorizeRoles } from '@/http/middlewares/authorize-roles';
 export async function postRoutes(app: FastifyInstance) {
     app.post('/post', { preHandler: authorizeRoles(['admin', 'professor']) }, create)
     app.get('/post', { preHandler: authorizeRoles(['admin', 'professor', 'aluno']) }, fetch)
-    app.get('/post/search', { preHandler: authorizeRoles(['admin', 'professor']) }, search)
+    app.get('/post/search', { preHandler: authorizeRoles(['admin', 'professor', 'aluno']) }, search)
     app.get('/post/:id', { preHandler: authorizeRoles(['admin', 'professor', 'aluno']) }, get)
     app.put('/post/:id', { preHandler: authorizeRoles(['admin', 'professor']) }, update)
     app.delete('/post/:id', { preHandler: authorizeRoles(['admin', 'professor']) }, remove)
