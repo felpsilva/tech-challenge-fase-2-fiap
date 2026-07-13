@@ -9,7 +9,7 @@ O projeto usa **2 containers**, cada um com uma responsabilidade única:
 
 | Container   | Imagem              | Papel                                                         | Porta (host) |
 | ----------- | ------------------- | ------------------------------------------------------------- | ------------ |
-| `neon-init` | `postgres:16-alpine`| Bootstrap idempotente do schema/seed no Neon via `db/init.sql` | -            |
+| `neon-init` | `postgres:16-alpine`| Bootstrap idempotente do schema/seed no Neon via `db/init.sql`| -            |
 | `backend`   | build `./backend`   | API REST — regras de negócio e acesso ao Neon                 | 3001         |
 
 ### Por que essa separação faz sentido neste contexto?
@@ -19,11 +19,11 @@ O projeto usa **2 containers**, cada um com uma responsabilidade única:
   do backend subir, evitando erro de tabela inexistente em ambiente novo.
 ```
 ┌────────────┐       ┌────────────┐
-│ neon-init  │──────▶│  backend   │
+│ neon-init  │─────> │  backend   │
 │ aplica SQL │       │  Fastify   │
 └────────────┘       │  :3001     │
-         ▲           └────────────┘
-         └──────▶ Neon PostgreSQL remoto
+         ^           └────────────┘
+         └──────> Neon PostgreSQL remoto
 ```
 
 ## Como subir a aplicação
@@ -41,6 +41,58 @@ Acesse:
 Para rodar em segundo plano: `docker compose up --build -d`
 Para derrubar: `docker compose down`.
 
+## Produção
+
+A API também está publicada em produção no Render, consumindo a imagem do backend
+publicada no Docker Hub.
+- **URL do imagem no Docker Hub:** https://hub.docker.com/repository/docker/fpsilva777/blog-educacional-backend/tags
+
+- **URL da API em produção:** https://blog-educacional-backend-1.onrender.com/
+
+Sobre atualizações em produção: o deploy é feito no github, o workflow encaminha para a imagem do Docker Hub, e o Render puxa a imagem,
+porém, o Render não atualiza automaticamente a imagem, então é necessário ir no painel do Render e clicar em "Manual Deploy" para atualizar a imagem.
+
+## Exemplos de payload
+
+### POST /user
+
+```json
+{
+  "username": "admin",
+  "password": "admin123",
+  "permission": "admin"
+}
+```
+
+### POST /category
+
+```json
+{
+  "name": "Matemática",
+  "slug": "matematica"
+}
+```
+
+### POST /post
+
+```json
+{
+  "user_id": 1,
+  "title": "Primeiro post",
+  "slug": "primeiro-post",
+  "content": "Conteúdo de exemplo da publicação.",
+  "image_url": "https://exemplo.com/imagem.png",
+  "status": "published",
+  "categories": [
+    {
+      "id": 1,
+      "name": "Matemática",
+      "slug": "matematica"
+    }
+  ]
+}
+```
+
 ## Dados de demonstração (seed)
 
 Na subida, o `db/init.sql` cria o schema e popula dados de exemplo no Neon.
@@ -48,8 +100,6 @@ Como o script é idempotente (`IF NOT EXISTS` e `ON CONFLICT`), ele pode rodar
 em toda inicialização sem duplicar estrutura/dados sensíveis:
 
 - Usuário: **admin** · senha: **admin123** (permissão `admin`)
-- Categorias: Matemática, Ciências, História
-- Uma publicação de boas-vindas
 
 Para reaplicar o bootstrap: `docker compose up --build`.
 
@@ -59,12 +109,10 @@ Para reaplicar o bootstrap: `docker compose up --build`.
 .
 ├── docker-compose.yml      # orquestra neon-init + backend
 ├── db/
-│   └── init.sql            # schema + seed (TypeORM não usa synchronize)
+│   └── init.sql            # schema + seed (TypeORM)
 └── backend/                # API Fastify + TypeORM (Dockerfile próprio)
 ```
 
 ## Observações técnicas
 
 - O backend roda o TypeScript diretamente via `tsx` (sem etapa de build).
-- O TypeORM **não** usa `synchronize`; por isso o schema é criado pelo
-  `db/init.sql` na etapa `neon-init`.
