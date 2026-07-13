@@ -52,9 +52,49 @@ publicada no Docker Hub.
 Sobre atualizações em produção: o deploy é feito no github, o workflow encaminha para a imagem do Docker Hub, e o Render puxa a imagem,
 porém, o Render não atualiza automaticamente a imagem, então é necessário ir no painel do Render e clicar em "Manual Deploy" para atualizar a imagem.
 
-## Exemplos de payload
+## Guia de uso da API
 
-### POST /user
+### Base URL
+
+- **Local:** http://localhost:3001
+- **Produção:** https://blog-educacional-backend-1.onrender.com/
+
+### Autenticação
+
+A API usa JWT. Para acessar rotas protegidas, faça `POST /user/signin` e envie o
+token retornado no header `Authorization` no formato:
+
+```http
+Authorization: Bearer <token>
+```
+
+### Perfis de acesso
+
+- `admin`: acesso administrativo completo.
+- `professor`: pode criar, listar, atualizar e remover categorias e posts.
+- `aluno`: pode consultar posts publicados.
+
+### Rotas principais
+
+- `POST /user/signin`: autentica e retorna o token JWT.
+- `POST /user`: cria usuário novo, restrito a `admin`.
+- `POST /category`: cria categoria, restrito a `admin` e `professor`.
+- `POST /post`: cria publicação, restrito a `admin` e `professor`.
+- `GET /post` e `GET /post/:id`: consulta posts, liberado para `admin`, `professor` e `aluno`.
+- `GET /category`, `GET /category/:id`, `PUT` e `DELETE` das categorias: restrito a `admin` e `professor`.
+
+### Exemplos de payload
+
+#### POST /user/signin
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+#### POST /user
 
 ```json
 {
@@ -64,7 +104,7 @@ porém, o Render não atualiza automaticamente a imagem, então é necessário i
 }
 ```
 
-### POST /category
+#### POST /category
 
 ```json
 {
@@ -73,7 +113,7 @@ porém, o Render não atualiza automaticamente a imagem, então é necessário i
 }
 ```
 
-### POST /post
+#### POST /post
 
 ```json
 {
@@ -91,6 +131,28 @@ porém, o Render não atualiza automaticamente a imagem, então é necessário i
     }
   ]
 }
+```
+
+### Exemplos de chamada
+
+```bash
+curl -X POST http://localhost:3001/user/signin \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
+
+```bash
+curl -X POST http://localhost:3001/category \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"name":"Matemática","slug":"matematica"}'
+```
+
+```bash
+curl -X POST http://localhost:3001/post \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"user_id":1,"title":"Primeiro post","slug":"primeiro-post","content":"Conteúdo de exemplo da publicação.","status":"published","categories":[{"id":1,"name":"Matemática","slug":"matematica"}]}'
 ```
 
 ## Dados de demonstração (seed)
